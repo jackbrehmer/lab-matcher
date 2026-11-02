@@ -54,11 +54,10 @@ button, .btn { font: inherit; font-weight: 600; font-size: 14px; border-radius: 
 .stage span { font-size: 12px; color: var(--muted); }
 .stage .num { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--line); font-weight: 700; font-size: 13px; }
 .stage.active, .stage.done { opacity: 1; }
-.stage.active { border-color: currentColor; box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 15%, transparent); }
-.stage.a-scout { color: var(--scout); } .stage.a-fit { color: var(--fit); } .stage.a-writer { color: var(--writer); }
-.stage b { color: var(--ink); }
-.stage.active .num, .stage.done .num { background: currentColor; }
-.stage.active .num, .stage.done .num { color: #fff; }
+.stage.a-scout { --c: var(--scout); } .stage.a-fit { --c: var(--fit); } .stage.a-writer { --c: var(--writer); }
+.stage .num { color: var(--c); }
+.stage.active { border-color: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 15%, transparent); }
+.stage.active .num, .stage.done .num { background: var(--c); color: #fff; }
 .stage.active .num { animation: pulse 1.2s infinite; }
 @keyframes pulse { 50% { transform: scale(1.12); } }
 
