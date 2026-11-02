@@ -71,9 +71,38 @@ function NewSearch() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const set = (k: keyof typeof f) => (e: any) => setF({ ...f, [k]: e.target.value });
+  const [resumeFile, setResumeFile] = useState("");
+  const [parsing, setParsing] = useState(false);
+
+  async function onResumeFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setErr("");
+    setParsing(true);
+    setResumeFile(file.name);
+    setF((prev) => ({ ...prev, resume: "" }));
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/resume", { method: "POST", body });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || res.statusText);
+      setF((prev) => ({ ...prev, resume: data.text }));
+    } catch (e: any) {
+      setErr(e.message);
+      setResumeFile("");
+    } finally {
+      setParsing(false);
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!f.resume.trim()) {
+      setErr("Please upload your resume.");
+      return;
+    }
     setBusy(true);
     setErr("");
     try {
@@ -111,11 +140,22 @@ function NewSearch() {
           </label>
         </div>
         <label>Research interests<textarea rows={2} value={f.interests} onChange={set("interests")} required placeholder="comma separated, e.g. reinforcement learning, climate risk, behavioral finance" /></label>
-        <label>Resume (paste text)<textarea rows={10} value={f.resume} onChange={set("resume")} required /></label>
+        <label>Resume
+          <div className={`upload${f.resume ? " ready" : ""}`}>
+            <input type="file" accept=".pdf,.docx,.txt,.md,application/pdf,text/plain" onChange={onResumeFile} disabled={parsing} />
+            <span className="upload-text">
+              {parsing
+                ? `Reading ${resumeFile}…`
+                : f.resume
+                  ? <>✓ {resumeFile || "Sample resume"} loaded · <u>replace</u></>
+                  : <>Drop your resume here or <u>choose a file</u> (PDF, DOCX, or TXT)</>}
+            </span>
+          </div>
+        </label>
         {err && <div className="flag bad">{err}</div>}
         <div className="actions">
-          <button type="button" className="ghost" onClick={() => setF({ ...SAMPLE, email: f.email })}>Load sample student</button>
-          <button className="primary" disabled={busy}>{busy ? "Starting agents…" : "Find my labs →"}</button>
+          <button type="button" className="ghost" onClick={() => { setF({ ...SAMPLE, email: f.email }); setResumeFile("sample-resume.txt"); }}>Load sample student</button>
+          <button className="primary" disabled={busy || parsing}>{busy ? "Starting agents…" : "Find my labs →"}</button>
         </div>
       </form>
       <Pipeline status="queued" />

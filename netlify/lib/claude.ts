@@ -17,7 +17,7 @@ export type ToolDef = {
 
 type Emit = (e: Omit<TraceEvent, "t">) => Promise<void> | void;
 
-async function callClaude(body: Record<string, unknown>): Promise<any> {
+export async function callClaude(body: Record<string, unknown>): Promise<any> {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error("ANTHROPIC_API_KEY is not set in Netlify environment variables");
   for (let attempt = 0; attempt < 4; attempt++) {
