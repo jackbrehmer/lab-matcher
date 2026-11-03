@@ -68,19 +68,6 @@ button, .btn { font: inherit; font-weight: 600; font-size: 14px; border-radius: 
 .pill.scout, .pill.fit, .pill.writer, .pill.queued { background: #fbf3dc; color: var(--gold-ink); }
 
 .grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 16px; align-items: start; }
-.tracecard { position: sticky; top: 12px; background: var(--term); border-color: var(--term); color: #e9e4d8; }
-.tracecard h3 { color: #fff; display: flex; justify-content: space-between; }
-.trace { font: 12px/1.55 "JetBrains Mono", ui-monospace, monospace; max-height: 70vh; overflow-y: auto; }
-.tl { display: grid; grid-template-columns: 48px 52px 14px 1fr; gap: 4px; padding: 2px 0; }
-.tl .ts { color: #77715f; white-space: pre; }
-.tl .who { font-weight: 600; }
-.tl.a-scout .who { color: #7aa7ff; } .tl.a-fit .who { color: #ff9a5c; } .tl.a-writer .who { color: #6fd39a; } .tl.a-system .who { color: var(--gold); }
-.tl.k-thought .tx { color: #bdb6a4; font-style: italic; }
-.tl.k-tool .tx { color: #fff; }
-.tl.k-result .tx { color: #9c9584; }
-.tl.k-decision .tx { color: var(--gold); font-weight: 600; }
-.tl.k-error .tx { color: #ff7b72; }
-.tl.k-status .tx { color: var(--gold); }
 .blink { animation: blink 1s steps(2) infinite; color: var(--gold); }
 @keyframes blink { 50% { opacity: 0; } }
 
@@ -123,7 +110,6 @@ button, .btn { font: inherit; font-weight: 600; font-size: 14px; border-radius: 
 
 @media (max-width: 860px) {
   .grid { grid-template-columns: 1fr; }
-  .tracecard { position: static; }
   .pipeline { grid-template-columns: 1fr; }
   .row { grid-template-columns: 1fr; }
   h1 { font-size: 27px; }
