@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import type { AutomationLog, Match, Run, TraceEvent } from "../netlify/lib/types";
+import { useEffect, useState } from "react";
+import type { AutomationLog, Match, Run } from "../netlify/lib/types";
 
 type View = { kind: "new" } | { kind: "run"; id: string } | { kind: "automation" } | { kind: "history" };
 
@@ -195,7 +195,6 @@ function Pipeline({ status }: { status: Run["status"] }) {
 function RunView({ id }: { id: string }) {
   const [run, setRun] = useState<Run | null>(null);
   const [err, setErr] = useState("");
-  const traceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let stop = false;
@@ -216,10 +215,6 @@ function RunView({ id }: { id: string }) {
     return () => { stop = true; clearTimeout(timer); };
   }, [id]);
 
-  useEffect(() => {
-    traceRef.current?.scrollTo({ top: traceRef.current.scrollHeight, behavior: "smooth" });
-  }, [run?.trace.length]);
-
   if (err) return <main className="narrow"><div className="flag bad">{err}</div></main>;
   if (!run) return <main className="narrow"><p className="muted">Loading…</p></main>;
 
@@ -228,7 +223,7 @@ function RunView({ id }: { id: string }) {
   const elapsed = Math.round(((run.trace.at(-1)?.t ?? Date.now()) - started) / 1000);
 
   return (
-    <main>
+    <main className="narrow">
       <div className="runhead">
         <div>
           <h2>{run.profile.name}</h2>
@@ -238,42 +233,14 @@ function RunView({ id }: { id: string }) {
       </div>
       <Pipeline status={run.status} />
 
-      <div className="grid">
-        <section className="card tracecard">
-          <h3>Agent trace <span className="muted">{run.trace.length} events</span></h3>
-          <div className="trace" ref={traceRef}>
-            {run.trace.map((e, i) => <TraceLine key={i} e={e} t0={started} />)}
-            {running && <div className="tl blink">▍</div>}
-          </div>
-        </section>
-
-        <section className="results">
-          {run.status === "error" && <div className="flag bad">{run.error}</div>}
-          {run.matches?.map((m, i) => <MatchCard key={m.authorId} m={m} rank={i + 1} runId={run.id} studentName={run.profile.name} />)}
-          {run.status === "done" && !run.matches?.length && <div className="card">No labs scored 6+ this time. Try broader interests.</div>}
-          {!!run.rejected?.length && (
-            <details className="card rejected">
-              <summary>{run.rejected.length} candidates rejected by Fit Analyst</summary>
-              <ul>{run.rejected.map((r) => <li key={r.authorId}><b>{r.name}</b>: {r.reason}</li>)}</ul>
-            </details>
-          )}
-          {running && !run.matches && <div className="card muted">Matches will appear here when the Fit Analyst finishes.</div>}
-        </section>
-      </div>
+      <section className="results">
+        {run.status === "error" && <div className="flag bad">{run.error}</div>}
+        {run.matches?.map((m, i) => <MatchCard key={m.authorId} m={m} rank={i + 1} runId={run.id} studentName={run.profile.name} />)}
+        {run.status === "done" && !run.matches?.length && <div className="card">No matching labs this time. Try broader interests.</div>}
+        {running && !run.matches && <div className="card muted">Finding professors that match your interests. Matches appear here in a minute or two.</div>}
+        {running && !!run.matches && <div className="card muted">Writing your outreach emails…</div>}
+      </section>
     </main>
-  );
-}
-
-function TraceLine({ e, t0 }: { e: TraceEvent; t0: number }) {
-  const icon = { thought: "·", tool: "→", result: "←", decision: "★", error: "!", status: "■" }[e.kind];
-  const who = { scout: "SCOUT", fit: "FIT", writer: "WRITER", system: "SYS" }[e.agent];
-  return (
-    <div className={`tl k-${e.kind} a-${e.agent}`}>
-      <span className="ts">{((e.t - t0) / 1000).toFixed(1).padStart(5, " ")}s</span>
-      <span className="who">{who}</span>
-      <span className="ic">{icon}</span>
-      <span className="tx">{e.text}</span>
-    </div>
   );
 }
 
@@ -282,6 +249,15 @@ function MatchCard({ m, rank, runId, studentName }: { m: Match; rank: number; ru
   const [body, setBody] = useState(m.email?.body ?? "");
   const [status, setStatus] = useState(m.status);
   const [copied, setCopied] = useState(false);
+
+  // Cards mount while the Fit Analyst is still scoring, before the Writer has produced a draft.
+  // Load the draft into the editable fields once it arrives on a later poll.
+  useEffect(() => {
+    if (!m.email) return;
+    setSubject(m.email.subject);
+    setBody(m.email.body);
+  }, [m.email?.subject, m.email?.body]);
+  useEffect(() => setStatus(m.status), [m.status]);
 
   async function mark(s: Match["status"]) {
     setStatus(s);
@@ -294,7 +270,6 @@ function MatchCard({ m, rank, runId, studentName }: { m: Match; rank: number; ru
 
   const gmail = `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   const findEmail = `https://www.google.com/search?q=${encodeURIComponent(`${m.name} University of Colorado Boulder email`)}`;
-  const b = m.scoreBreakdown;
 
   return (
     <article className="card match">
@@ -304,27 +279,13 @@ function MatchCard({ m, rank, runId, studentName }: { m: Match; rank: number; ru
           <h3>{m.name}</h3>
           <p className="muted">{m.department || "CU Boulder"} {m.labUrl && <> · <a href={m.labUrl} target="_blank">lab page ↗</a></>}</p>
         </div>
-        <div className="score"><b>{m.score}</b><span>/10</span></div>
-      </div>
-      <div className="bars">
-        <Bar label="Topic" v={b.topic} max={4} />
-        <Bar label="Skills" v={b.skills} max={3} />
-        <Bar label="Access" v={b.access} max={3} />
       </div>
       <p>{m.reasoning}</p>
       <p className="cite">Cites: <a href={m.citedPaper.url} target="_blank">{m.citedPaper.title}</a> ({m.citedPaper.year})</p>
-      <div className="chips">
-        <span className="chip ask">Ask: {m.askType === "credit" ? "course credit" : m.askType === "paid" ? "paid RA" : "volunteer"}</span>
-        {m.gaps.map((g) => <span key={g} className="chip">Brush up: {g}</span>)}
-      </div>
 
       {m.email && (
         <div className="email">
-          {m.email.verified ? (
-            <div className="flag ok">✓ Passed guardrails: cites real paper, names professor, under 150 words</div>
-          ) : (
-            <div className="flag warn">Needs review: {m.email.flags.join("; ")}</div>
-          )}
+          {!m.email.verified && <div className="flag warn">Needs review: {m.email.flags.join("; ")}</div>}
           <input value={subject} onChange={(e) => setSubject(e.target.value)} />
           <textarea rows={9} value={body} onChange={(e) => setBody(e.target.value)} />
           <div className="actions">
@@ -339,16 +300,6 @@ function MatchCard({ m, rank, runId, studentName }: { m: Match; rank: number; ru
         </div>
       )}
     </article>
-  );
-}
-
-function Bar({ label, v, max }: { label: string; v: number; max: number }) {
-  return (
-    <div className="bar">
-      <span>{label}</span>
-      <div><i style={{ width: `${(v / max) * 100}%` }} /></div>
-      <em>{v}/{max}</em>
-    </div>
   );
 }
 
