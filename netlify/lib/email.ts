@@ -14,5 +14,5 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
     }),
   });
   if (!res.ok) return { ok: false, detail: `Resend ${res.status}: ${(await res.text()).slice(0, 200)}` };
-  return { ok: true, detail: `sent to ${recipient}` };
+  return { ok: true, detail: "sent" };
 }

@@ -121,3 +121,11 @@ button, .btn { font: inherit; font-weight: 600; font-size: 14px; border-radius: 
 .upload input[type="file"] { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
 .upload input[type="file"]:disabled { cursor: progress; }
 .upload u { color: var(--ink); }
+.auth { max-width: 460px; }
+.tabs { display: flex; gap: 4px; margin-bottom: 14px; background: var(--bg); padding: 4px; border-radius: 10px; }
+.tabs button { flex: 1; background: transparent; color: var(--muted); }
+.tabs button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+.linkish { background: none; border: none; color: var(--muted); text-decoration: underline; padding: 8px 4px; margin-right: auto; }
+.signout { margin-left: 8px; padding: 5px 12px; font-size: 13px; }
+.narrow-flag { max-width: 760px; margin: 16px auto 0; }
+input:disabled { color: var(--muted); background: var(--bg); }
